@@ -1,0 +1,25 @@
+<div class="min-h-screen xl:flex">
+  <div>
+    <app-sidebar></app-sidebar>
+    <app-backdrop></app-backdrop>
+  </div>
+  <div
+      class="flex min-h-screen min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out"
+      [ngClass]="{
+        'xl:ms-[18.125rem]': (isExpanded$ | async) || (isHovered$ | async),
+        'xl:ms-[5.625rem]': !(isExpanded$ | async) && !(isHovered$ | async),
+        'ms-0': (isMobileOpen$ | async)
+      }"
+  >
+    <!-- app header start -->
+    <app-header/>
+    <!-- app header end -->
+    <div class="p-4 mx-auto w-full max-w-(--breakpoint-2xl) md:p-6">
+      <router-outlet></router-outlet>
+    </div>
+    <!-- footer: içerik kısa olsa da sayfanın en altında durur -->
+    <app-footer />
+    <!-- yapay zeka sohbet -->
+    <app-chat-widget />
+  </div>
+</div>

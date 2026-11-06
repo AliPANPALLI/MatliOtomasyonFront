@@ -1,0 +1,25 @@
+<div>
+  <app-page-breadcrumb [pageTitle]="'Form Elements' | t" />
+  <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+    <div class="space-y-6">
+      <app-default-inputs />
+      <app-select-inputs />
+      <app-textarea-input />
+      <app-input-states />
+    </div>
+    <div class="space-y-6">
+      <app-input-group />
+      <app-file-input />
+      <app-checkbox-inputs />
+      <app-radio-buttons />
+      <app-toggle-switch />
+      <app-dropzone />
+    </div>
+  </div>
+
+  <!-- Ek standart form elemanları -->
+  <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+    <app-extra-inputs />
+    <app-validated-form class="xl:sticky xl:top-24 xl:self-start" />
+  </div>
+</div>

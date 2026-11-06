@@ -1,0 +1,225 @@
+<!-- ================= Sağ alt: sohbet butonu ================= -->
+@if (mode() === 'closed') {
+  <button
+    type="button"
+    (click)="open()"
+    [attr.aria-label]="'chat.open' | t"
+    [title]="'chat.open' | t"
+    style="bottom: calc(1.5rem + var(--footer-offset, 0px))"
+    class="group fixed z-[99991] flex size-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-theme-xl ring-4 ring-brand-500/15 transition-[transform,background-color] duration-300 hover:-translate-y-0.5 hover:bg-brand-600 animate-in fade-in zoom-in-90 ltr:right-6 rtl:left-6"
+  >
+    <svg class="relative size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 11.5a8.4 8.4 0 01-9 8.4 9.3 9.3 0 01-3.9-.9L3 20.5l1.5-4.2A8 8 0 013 11.5 8.4 8.4 0 0112 3a8.4 8.4 0 019 8.5z" />
+      <path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01" stroke-width="2.4" />
+    </svg>
+  </button>
+}
+
+<!-- ================= Sohbet penceresi ================= -->
+@if (mode() !== 'closed') {
+  @let full = mode() === 'full';
+
+  @if (full) {
+    <div class="fixed inset-0 z-[99992] bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" (click)="toggleFull()"></div>
+  }
+
+  <section
+    role="dialog"
+    [attr.aria-label]="'chat.title' | t"
+    class="fixed z-[99993] flex overflow-hidden border border-gray-200 bg-white shadow-theme-xl animate-in fade-in duration-200 dark:border-gray-800 dark:bg-[#1E2635]"
+    [class]="
+      full
+        ? 'inset-0 sm:inset-6 lg:inset-10 sm:rounded-3xl zoom-in-95'
+        : 'inset-0 sm:inset-auto sm:bottom-6 sm:h-[min(40rem,calc(100vh-3rem))] sm:w-[25rem] sm:rounded-3xl slide-in-from-bottom-4 ltr:sm:right-6 rtl:sm:left-6'
+    "
+  >
+    <!-- ---------- Sol: sohbet geçmişi (tam ekran) ---------- -->
+    @if (full) {
+      <aside
+        class="flex w-72 shrink-0 flex-col border-gray-200 bg-gray-50 ltr:border-r rtl:border-l dark:border-gray-800 dark:bg-white/[0.02] max-md:absolute max-md:inset-y-0 max-md:z-10 max-md:shadow-theme-xl max-md:transition-transform ltr:max-md:left-0 rtl:max-md:right-0"
+        [class]="listOpen() ? '' : 'max-md:-translate-x-full rtl:max-md:translate-x-full'"
+      >
+        <div class="p-4">
+          <button
+            type="button"
+            (click)="newChat()"
+            class="flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-brand-500 text-sm font-medium text-white shadow-theme-xs transition-colors hover:bg-brand-600"
+          >
+            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+            {{ 'chat.new' | t }}
+          </button>
+        </div>
+        <p class="px-4 pb-2 text-xs font-medium uppercase tracking-wider text-gray-400">{{ 'chat.history' | t }}</p>
+        <ul class="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-2 pb-4">
+          @for (c of chat.sorted(); track c.id) {
+            <li>
+              <div
+                class="group flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors"
+                [class]="
+                  c.id === chat.activeId()
+                    ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400'
+                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                "
+              >
+                <button type="button" class="min-w-0 flex-1 text-start" (click)="selectChat(c.id)">
+                  <span class="block truncate font-medium">{{ c.title || ('chat.untitled' | t) }}</span>
+                  <span class="block text-xs text-gray-400">{{ date(c.updatedAt) }}</span>
+                </button>
+                <button
+                  type="button"
+                  (click)="chat.delete(c.id)"
+                  [attr.aria-label]="'chat.delete' | t"
+                  [title]="'chat.delete' | t"
+                  class="flex size-7 shrink-0 items-center justify-center rounded-md text-gray-400 opacity-0 transition hover:bg-error-50 hover:text-error-500 group-hover:opacity-100 focus:opacity-100 dark:hover:bg-error-500/15"
+                >
+                  <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3" /></svg>
+                </button>
+              </div>
+            </li>
+          } @empty {
+            <li class="px-3 py-6 text-center text-sm text-gray-400">{{ 'chat.noHistory' | t }}</li>
+          }
+        </ul>
+      </aside>
+      @if (listOpen()) {
+        <div class="absolute inset-0 z-[5] bg-black/30 md:hidden" (click)="listOpen.set(false)"></div>
+      }
+    }
+
+    <!-- ---------- Sağ: konuşma ---------- -->
+    <div class="flex min-w-0 flex-1 flex-col">
+      <!-- Başlık -->
+      <header
+        class="relative flex items-center gap-3 overflow-hidden px-4 py-3.5 matli-fg bg-matli-gradient border-b border-brand-100 dark:border-transparent"
+      >
+        <div class="pointer-events-none absolute inset-0 bg-honeycomb-adaptive"></div>
+
+        @if (full) {
+          <button
+            type="button"
+            (click)="listOpen.set(true)"
+            [attr.aria-label]="'chat.history' | t"
+            class="relative flex size-9 items-center justify-center rounded-full matli-icon-btn md:hidden"
+          >
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+        }
+
+        <span class="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-50 ring-2 ring-brand-200 dark:ring-white/30">
+          <img src="/images/logo/matli-icon.png" alt="" class="size-6 object-contain" />
+        </span>
+        <div class="relative min-w-0 flex-1">
+          <p class="truncate font-semibold">{{ 'chat.title' | t }}</p>
+          <p class="flex items-center gap-1.5 text-xs matli-fg-muted">
+            <span class="size-2 rounded-full bg-success-400"></span>
+            {{ (chat.sending() ? 'chat.typing' : 'chat.subtitle') | t }}
+          </p>
+        </div>
+
+        <div class="relative flex items-center gap-1">
+          @if (!full) {
+            <button type="button" (click)="newChat()" [attr.aria-label]="'chat.new' | t" [title]="'chat.new' | t" class="flex size-9 items-center justify-center rounded-full matli-icon-btn">
+              <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
+            </button>
+          }
+          <button type="button" (click)="toggleFull()" [attr.aria-label]="(full ? 'chat.shrink' : 'chat.expand') | t" [title]="(full ? 'chat.shrink' : 'chat.expand') | t" class="hidden size-9 items-center justify-center rounded-full matli-icon-btn sm:flex">
+            @if (full) {
+              <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /></svg>
+            } @else {
+              <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
+            }
+          </button>
+          <button type="button" (click)="close()" [attr.aria-label]="'popup.close' | t" [title]="'popup.close' | t" class="flex size-9 items-center justify-center rounded-full matli-icon-btn">
+            <svg class="size-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M15 5L5 15M5 5l10 10" /></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Mesajlar -->
+      <div #scroller class="custom-scrollbar flex-1 overflow-y-auto bg-honeycomb px-4 py-5">
+        <div class="mx-auto flex max-w-3xl flex-col gap-4">
+          @let messages = chat.active()?.messages ?? [];
+
+          @if (!messages.length) {
+            <!-- Boş durum -->
+            <div class="flex flex-col items-center py-10 text-center">
+              <span class="flex size-16 items-center justify-center rounded-full bg-brand-50 ring-8 ring-brand-50/50 dark:bg-brand-100 dark:ring-brand-500/10">
+                <img src="/images/logo/matli-icon.png" alt="" class="size-9 object-contain" />
+              </span>
+              <p class="mt-5 text-lg font-semibold text-gray-800 dark:text-white/90">{{ 'chat.emptyTitle' | t }}</p>
+              <p class="mt-1 max-w-xs text-sm text-gray-500 dark:text-gray-400">{{ 'chat.emptyText' | t }}</p>
+            </div>
+          }
+
+          @for (m of messages; track m.id) {
+            @if (m.role === 'user') {
+              <div class="flex justify-end">
+                <div class="max-w-[80%]">
+                  <div class="rounded-2xl rounded-ee-md bg-brand-500 px-4 py-2.5 text-sm whitespace-pre-wrap text-white shadow-theme-xs">{{ m.content }}</div>
+                  <p class="mt-1 text-end text-[11px] text-gray-400">{{ time(m.createdAt) }}</p>
+                </div>
+              </div>
+            } @else {
+              <div class="flex items-end gap-2">
+                <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-100">
+                  <img src="/images/logo/matli-icon.png" alt="" class="size-5 object-contain" />
+                </span>
+                <div class="max-w-[80%]">
+                  @if (m.error) {
+                    <div class="rounded-2xl rounded-es-md border border-error-200 bg-error-50 px-4 py-2.5 text-sm text-error-600 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
+                      {{ 'chat.error' | t }}
+                      <button type="button" (click)="chat.retry()" class="ms-1 font-semibold underline underline-offset-2">{{ 'chat.retry' | t }}</button>
+                    </div>
+                  } @else {
+                    <div class="rounded-2xl rounded-es-md border border-gray-200 bg-white px-4 py-2.5 text-sm whitespace-pre-wrap text-gray-800 shadow-theme-xs dark:border-gray-700 dark:bg-gray-800 dark:text-white/90">{{ m.content }}</div>
+                  }
+                  <p class="mt-1 text-[11px] text-gray-400">{{ time(m.createdAt) }}</p>
+                </div>
+              </div>
+            }
+          }
+
+          <!-- Yazıyor... -->
+          @if (chat.sending()) {
+            <div class="flex items-end gap-2">
+              <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-100">
+                <img src="/images/logo/matli-icon.png" alt="" class="size-5 object-contain" />
+              </span>
+              <div class="flex gap-1 rounded-2xl rounded-es-md border border-gray-200 bg-white px-4 py-3.5 dark:border-gray-700 dark:bg-gray-800">
+                <span class="typing-dot size-2 rounded-full bg-brand-400"></span>
+                <span class="typing-dot size-2 rounded-full bg-brand-400 [animation-delay:.15s]"></span>
+                <span class="typing-dot size-2 rounded-full bg-brand-400 [animation-delay:.3s]"></span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Yazma alanı -->
+      <div class="border-t border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-[#1E2635]">
+        <form class="mx-auto flex max-w-3xl items-end gap-2" (submit)="$event.preventDefault(); send()">
+          <textarea
+            #input
+            rows="1"
+            [value]="draft()"
+            (input)="onInput($event)"
+            (keydown)="onKeydown($event)"
+            [placeholder]="'chat.placeholder' | t"
+            [attr.aria-label]="'chat.placeholder' | t"
+            class="custom-scrollbar max-h-40 min-h-11 flex-1 resize-none rounded-[10px] border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden placeholder:text-gray-400 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
+          ></textarea>
+          <button
+            type="submit"
+            [disabled]="!draft().trim() || chat.sending()"
+            [attr.aria-label]="'chat.send' | t"
+            [title]="'chat.send' | t"
+            class="flex size-11 shrink-0 items-center justify-center rounded-[10px] bg-brand-500 text-white shadow-theme-xs transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-200 dark:disabled:bg-brand-800"
+          >
+            <svg class="size-5 rtl:-scale-x-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M12 5l7 7-7 7" /></svg>
+          </button>
+        </form>
+        <p class="mt-2 text-center text-[11px] text-gray-400">{{ 'chat.disclaimer' | t }}</p>
+      </div>
+    </div>
+  </section>
+}
